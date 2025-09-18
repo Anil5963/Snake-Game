@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .blink {
+      animation: blink 0.5s infinite;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen">
+  <div class="container relative h-[500px] w-[800px] border-2 border-red-500 overflow-hidden">
+    <div class="snake absolute h-2 w-2 bg-green-500"></div>
+    <div class="dot absolute h-2 w-2 bg-red-500 rounded-full"></div>
+    <div class="bigdot absolute h-4 w-4 bg-orange-500 rounded-full hidden"></div>
+    <div class="gameover hidden absolute inset-0 bg-black bg-opacity-70 text-white text-4xl flex justify-center items-center">
+      GAME OVER
+    </div>
+  </div>
+
+  <script>
+    const snake = document.querySelector(".snake");
+    const dot = document.querySelector(".dot");
+    const bigdot = document.querySelector(".bigdot");
+    const container = document.querySelector(".container");
+    const gameover = document.querySelector(".gameover");
+
+    let x = 0, y = 0;
+    let direction = null;
+    let snakeWidth = 2;  // width grows
+    let snakeHeight = 2; // stays same
+    let eatenCount = 0;
+    let gameRunning = true;
+
+    // Place element randomly inside container
+    function placeDotRandomly(dotElement) {
+      const dotSize = dotElement.offsetWidth;
+      const maxX = container.clientWidth - dotSize;
+      const maxY = container.clientHeight - dotSize;
+      const randomX = Math.floor(Math.random() * maxX);
+      const randomY = Math.floor(Math.random() * maxY);
+
+      dotElement.style.left = randomX + "px";
+      dotElement.style.top = randomY + "px";
+      dotElement.style.position = "absolute";
+    }
+
+    // Collision detection
+    function isColliding(a, b) {
+      const rectA = a.getBoundingClientRect();
+      const rectB = b.getBoundingClientRect();
+      return !(
+        rectA.top > rectB.bottom ||
+        rectA.bottom < rectB.top ||
+        rectA.left > rectB.right ||
+        rectA.right < rectB.left
+      );
+    }
+
+    // Show bigdot with blinking animation
+    function showBigDot() {
+      placeDotRandomly(bigdot);
+      bigdot.classList.remove("hidden");
+      bigdot.classList.add("blink");
+
+      setTimeout(() => {
+        bigdot.classList.add("hidden");
+        bigdot.classList.remove("blink");
+      }, 5000); // bigdot disappears after 5 seconds
+    }
+
+    // Initial placement
+    placeDotRandomly(dot);
+
+    // Listen for key presses
+    document.addEventListener("keydown", (e) => {
+      if (!gameRunning) return; // stop input after game over
+      if (e.key === "ArrowUp") direction = "up";
+      if (e.key === "ArrowDown") direction = "down";
+      if (e.key === "ArrowLeft") direction = "left";
+      if (e.key === "ArrowRight") direction = "right";
+    });
+
+    // Game loop
+    const gameLoop = setInterval(() => {
+      if (!gameRunning) return;
+
+      if (direction === "up") y -= 5;
+      if (direction === "down") y += 5;
+      if (direction === "left") x -= 5;
+      if (direction === "right") x += 5;
+
+      snake.style.top = y + "px";
+      snake.style.left = x + "px";
+
+      // GAME OVER check (snake hits border)
+      if (
+        x < 0 ||
+        y < 0 ||
+        x + snake.offsetWidth > container.clientWidth ||
+        y + snake.offsetHeight > container.clientHeight
+      ) {
+        gameRunning = false;
+        gameover.classList.remove("hidden");
+        clearInterval(gameLoop);
+        return;
+      }
+
+      // Collision with small dot
+      if (isColliding(snake, dot)) {
+        eatenCount++;
+        snakeWidth += 2; // grow in width
+        snake.style.width = snakeWidth + "px";
+        snake.style.height = snakeHeight + "px"; // stays fixed
+        placeDotRandomly(dot);
+
+        if (eatenCount % 5 === 0) {
+          showBigDot();
+        }
+      }
+
+      // Collision with bigdot
+      if (!bigdot.classList.contains("hidden") && isColliding(snake, bigdot)) {
+        snakeWidth += 10; // bonus width
+        snake.style.width = snakeWidth + "px";
+        snake.style.height = snakeHeight + "px";
+        bigdot.classList.add("hidden");
+        bigdot.classList.remove("blink");
+      }
+    }, 50);
+  </script>
+</body>
+</html>
+
